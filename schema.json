@@ -1,0 +1,44 @@
+{
+  "data_dictionary_version": "1.0",
+  "source_system": "Data Galaxy",
+  "tables": [
+    {
+      "table_name": "iq_lake.fact_orders",
+      "description": "Contains e-commerce transaction order details aggregated from IQ Data Lake.",
+      "columns": [
+        {"name": "order_id", "type": "VARCHAR(32)", "description": "Unique order identifier", "primary_key": true},
+        {"name": "customer_id", "type": "VARCHAR(32)", "description": "Foreign key reference to dim_customers"},
+        {"name": "order_date", "type": "DATE", "description": "Order date (YYYY-MM-DD)"},
+        {"name": "region", "type": "VARCHAR(20)", "description": "Sales region", "allowed_values": ["APAC", "EMEA", "NA"]},
+        {"name": "product_category", "type": "VARCHAR(50)", "description": "Product category", "allowed_values": ["Electronics", "Office Supplies", "Home & Living"]},
+        {"name": "order_amount_usd", "type": "DECIMAL(12,2)", "description": "Gross amount before discount"},
+        {"name": "discount_pct", "type": "DECIMAL(4,2)", "description": "Discount rate (e.g. 0.10 for 10%)"},
+        {"name": "order_status", "type": "VARCHAR(20)", "description": "Order status", "allowed_values": ["COMPLETED", "CANCELLED", "REFUNDED", "PENDING"]}
+      ],
+      "business_metrics": [
+        {
+          "metric_name": "Net Revenue",
+          "calculation": "SUM(order_amount_usd * (1 - discount_pct)) WHERE order_status = 'COMPLETED'",
+          "source": "original data dictionary"
+        },
+        {
+          "metric_name": "Gross Order Amount",
+          "calculation": "SUM(order_amount_usd)",
+          "source": "added_by_prompt_engineer",
+          "note": "No gross-amount metric existed in the original dictionary, but the task's own sample question ('total gross order amount for Electronics in APAC') needs one. Added here and flagged for the schema owner to review and adopt formally, rather than silently guessing inside the prompt."
+        }
+      ]
+    },
+    {
+      "table_name": "iq_lake.dim_customers",
+      "description": "Customer demographic and tier profile table.",
+      "columns": [
+        {"name": "customer_id", "type": "VARCHAR(32)", "description": "Unique customer identifier", "primary_key": true},
+        {"name": "customer_tier", "type": "VARCHAR(20)", "description": "Tier", "allowed_values": ["VIP", "Standard", "New"]},
+        {"name": "country", "type": "VARCHAR(50)", "description": "Country of residence"},
+        {"name": "signup_date", "type": "DATE", "description": "Registration date"}
+      ],
+      "note": "No sample rows were provided for this table. It is documented here so the prompt can warn the model off joining to it until real data lands."
+    }
+  ]
+}

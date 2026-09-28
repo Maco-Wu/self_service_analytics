@@ -1,0 +1,39 @@
+[
+  {
+    "id": "Q1",
+    "question": "What is the total gross order amount for the Electronics category in the APAC region?",
+    "metric_used": "Gross Order Amount (added_by_prompt_engineer)",
+    "sql": "SELECT SUM(order_amount_usd) AS gross_order_amount FROM fact_orders WHERE product_category = 'Electronics' AND region = 'APAC';",
+    "expected_pandas_check": "df[(df.product_category=='Electronics') & (df.region=='APAC')].order_amount_usd.sum()"
+  },
+  {
+    "id": "Q2",
+    "question": "Calculate the total Net Revenue across all completed orders in May 2026.",
+    "metric_used": "Net Revenue (original data dictionary)",
+    "sql": "SELECT SUM(order_amount_usd * (1 - discount_pct)) AS net_revenue FROM fact_orders WHERE order_status = 'COMPLETED' AND order_date >= DATE '2026-05-01' AND order_date < DATE '2026-06-01';",
+    "expected_pandas_check": "df[(df.order_status=='COMPLETED') & (df.order_date between 2026-05-01 and 2026-05-31)].apply(amount*(1-discount)).sum()"
+  },
+  {
+    "id": "Q3",
+    "question": "Which region has the highest Net Revenue among completed orders?",
+    "metric_used": "Net Revenue (original data dictionary)",
+    "sql": "SELECT region, SUM(order_amount_usd * (1 - discount_pct)) AS net_revenue FROM fact_orders WHERE order_status = 'COMPLETED' GROUP BY region ORDER BY net_revenue DESC LIMIT 1;",
+    "expected_pandas_check": "df[completed].groupby('region').apply(net revenue).sort_values(ascending=False).head(1)",
+    "note": "region can be NULL. NULL rows are excluded from every region's group by SQL's default GROUP BY behavior for this ranking question, which is correct here, but see Q5 for why that NULL group still needs surfacing separately."
+  },
+  {
+    "id": "Q4",
+    "question": "What is the average order amount by product category for completed orders?",
+    "metric_used": "none (simple aggregate, not a named metric)",
+    "sql": "SELECT product_category, AVG(order_amount_usd) AS avg_order_amount FROM fact_orders WHERE order_status = 'COMPLETED' GROUP BY product_category ORDER BY product_category;",
+    "expected_pandas_check": "df[completed].groupby('product_category').order_amount_usd.mean()"
+  },
+  {
+    "id": "Q5",
+    "question": "How many orders are missing a region, and what is the status breakdown for those?",
+    "metric_used": "none (data quality / edge-case question)",
+    "sql": "SELECT order_status, COUNT(*) AS order_count FROM fact_orders WHERE region IS NULL GROUP BY order_status ORDER BY order_status;",
+    "expected_pandas_check": "df[df.region.isna()].groupby('order_status').size()",
+    "note": "This question exists specifically to exercise the missing-key data quality path described in guardrails.py, using a real gap in the sample data (3 of 10 rows have a null region) rather than a synthetic one."
+  }
+]
