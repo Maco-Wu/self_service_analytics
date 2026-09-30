@@ -14,6 +14,8 @@ A small natural-language-to-SQL prototype for business analytics questions.
 
 ## Run
 
+Requires Python 3.11+.
+
 ```bash
 pip install -r requirements.txt
 python3 run_queries.py
